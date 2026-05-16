@@ -3,7 +3,6 @@ package com.example.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
 
@@ -16,8 +15,7 @@ import java.util.Date;
 public class JwtTokenProvider {
 
     private final SecretKey secretKey;
-
-    private final long accessTokenValidityMs = 15 * 60 * 1000L;          // 15 минут
+    private final long accessTokenValidityMs = 15 * 60 * 1000L; // 15 минут
     private final long refreshTokenValidityMs = 7L * 24 * 60 * 60 * 1000L; // 7 дней
 
     public JwtTokenProvider() {
@@ -33,12 +31,12 @@ public class JwtTokenProvider {
         Instant expiry = now.plusMillis(accessTokenValidityMs);
 
         return Jwts.builder()
-                .setSubject(username)
+                .subject(username)
                 .claim("role", role)
                 .claim("tokenType", "ACCESS")
-                .setIssuedAt(Date.from(now))
-                .setExpiration(Date.from(expiry))
-                .signWith(secretKey, SignatureAlgorithm.HS256)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(expiry))
+                .signWith(secretKey)
                 .compact();
     }
 
@@ -47,12 +45,12 @@ public class JwtTokenProvider {
         Instant expiry = now.plusMillis(refreshTokenValidityMs);
 
         return Jwts.builder()
-                .setSubject(username)
+                .subject(username)
                 .claim("deviceId", deviceId)
                 .claim("tokenType", "REFRESH")
-                .setIssuedAt(Date.from(now))
-                .setExpiration(Date.from(expiry))
-                .signWith(secretKey, SignatureAlgorithm.HS256)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(expiry))
+                .signWith(secretKey)
                 .compact();
     }
 
@@ -93,10 +91,10 @@ public class JwtTokenProvider {
     }
 
     private Claims parseClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(secretKey)
+        return Jwts.parser()
+                .verifyWith(secretKey)
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
     }
 }
