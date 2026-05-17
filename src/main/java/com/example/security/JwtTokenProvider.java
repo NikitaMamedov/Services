@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -15,15 +16,16 @@ import java.util.Date;
 public class JwtTokenProvider {
 
     private final SecretKey secretKey;
-    private final long accessTokenValidityMs = 15 * 60 * 1000L; // 15 минут
-    private final long refreshTokenValidityMs = 7L * 24 * 60 * 60 * 1000L; // 7 дней
 
-    public JwtTokenProvider(@org.springframework.beans.factory.annotation.Value("${pg.secret.password}")
-                            String secret) {
+    private final long accessTokenValidityMs = 15 * 60 * 1000L;
+    private final long refreshTokenValidityMs = 7L * 24 * 60 * 60 * 1000L;
 
-        if (secret == null || secret.isEmpty()) {
-            throw new IllegalStateException("pg.secret.password is not set");
+    public JwtTokenProvider(@Value("${pg.secret.password}") String secret) {
+
+        if (secret == null || secret.length() < 32) {
+            throw new IllegalStateException("JWT secret must be at least 32 characters");
         }
+
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -58,8 +60,7 @@ public class JwtTokenProvider {
     public boolean validateAccessToken(String token) {
         try {
             Claims claims = parseClaims(token);
-            String type = claims.get("tokenType", String.class);
-            return "ACCESS".equals(type);
+            return "ACCESS".equals(claims.get("tokenType", String.class));
         } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
@@ -68,8 +69,7 @@ public class JwtTokenProvider {
     public boolean validateRefreshToken(String token) {
         try {
             Claims claims = parseClaims(token);
-            String type = claims.get("tokenType", String.class);
-            return "REFRESH".equals(type);
+            return "REFRESH".equals(claims.get("tokenType", String.class));
         } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
