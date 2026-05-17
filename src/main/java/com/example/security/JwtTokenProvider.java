@@ -18,10 +18,11 @@ public class JwtTokenProvider {
     private final long accessTokenValidityMs = 15 * 60 * 1000L; // 15 минут
     private final long refreshTokenValidityMs = 7L * 24 * 60 * 60 * 1000L; // 7 дней
 
-    public JwtTokenProvider() {
-        String secret = System.getenv("PG_SECRET_PASSWORD");
+    public JwtTokenProvider(@org.springframework.beans.factory.annotation.Value("${pg.secret.password}")
+                            String secret) {
+
         if (secret == null || secret.isEmpty()) {
-            throw new IllegalStateException("Environment variable 'PG_SECRET_PASSWORD' is not set");
+            throw new IllegalStateException("pg.secret.password is not set");
         }
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
